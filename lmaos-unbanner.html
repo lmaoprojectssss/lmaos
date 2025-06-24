@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lmaos Quest Unbanner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .terminal {
+      font-family: monospace;
+      background-color: #111827;
+      color: #10b981;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      height: 200px;
+      overflow-y: auto;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      box-shadow: inset 0 0 10px #000;
+    }
+    .glow {
+      text-shadow: 0 0 5px #10b981, 0 0 10px #10b981;
+    }
+    .wavy {
+      display: inline-block;
+      animation: wave 2s infinite ease-in-out;
+    }
+    @keyframes wave {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    body {
+      background: radial-gradient(circle at top, #0f172a, #000);
+      animation: pulseBG 10s infinite;
+      overflow-y: auto;
+    }
+    @keyframes pulseBG {
+      0%, 100% { background-color: #0f172a; }
+      50% { background-color: #1f2937; }
+    }
+    .scanlines::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 100% 4px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    @keyframes typing {
+      from { width: 0 }
+      to { width: 100% }
+    }
+    .typing-line {
+      white-space: nowrap;
+      overflow: hidden;
+      border-right: 2px solid #10b981;
+      width: 0;
+      animation: typing 2s steps(30, end) forwards;
+    }
+  </style>
+</head>
+<body class="relative scanlines text-white min-h-screen flex flex-col items-center justify-start p-6">
+
+  <img src="3-BD671-D5-F74-B-44-B3-BF76-1-B31314-EB74-F.jpg" alt="Ww Modz Banner" class="w-80 mb-6 rounded-xl shadow-md animate-pulse" />
+
+  <div class="bg-gray-900 p-8 rounded-2xl shadow-lg w-full max-w-md space-y-6 text-center">
+    <h1 class="text-3xl font-bold text-green-400 glow animate-bounce">
+      <span class="wavy">L</span><span class="wavy">m</span><span class="wavy">a</span><span class="wavy">o</span><span class="wavy">s</span> Quest Unbanner
+    </h1>
+    <p class="text-sm text-gray-400">
+      If ban is too long or your account is unelidable you will not be able to unban.
+    </p>
+
+    <input id="userID" type="text" placeholder="Enter your App Code" class="w-full p-3 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-green-500" />
+
+    <button onclick="simulateUnban()" class="w-full bg-green-500 hover:bg-green-600 transition-all p-3 rounded-lg font-semibold animate-pulse">
+      Attempt Unban
+    </button>
+
+    <div id="result" class="text-lg font-semibold mt-4"></div>
+<div id="countdown" class="text-sm text-gray-400 mt-2"></div>
+
+    <div class="terminal mt-4 shadow-inner" id="consoleLog">
+      <div id="terminalOutput">&gt; Awaiting input...</div>
+    </div>
+
+    <button onclick="exportLogs()" class="mt-2 bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded transition duration-300">Export Logs</button>
+  </div>
+
+  <div class="bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-md mt-6 text-left">
+    <button onclick="toggleHowItWorks()" class="text-xl font-bold text-green-300 mb-2 w-full text-left focus:outline-none">
+      ▶ How it works
+    </button>
+    <div id="howItWorksContent" class="text-sm text-gray-300 hidden">
+      <p>
+        <strong>How Lmaos Quest Unbanner Works</strong><br>
+        You first need to download the APK from our Discord and allow it to access ONLY your Gorilla Tag files (it needs this to change the files to unban you).<br><br>
+        Then click <strong>Gen App Code</strong>, then put the app code into the website and click <strong>Attempt Unban</strong>.<br><br>
+        Your screen may flash black a few times — if it is successful, then you should be unbanned.
+      </p>
+    </div>
+  </div>
+
+  <footer class="mt-8 text-sm text-gray-400 text-center animate-pulse">
+    Made by <span class="text-green-400 font-semibold">Lmao.Exe</span> with ❤️
+  </footer>
+
+  <audio id="successSound" src="success.mp3"></audio>
+  <audio id="failSound" src="fail.mp3"></audio>
+  <audio id="typeSound" src="type.mp3"></audio>
+
+  <script>
+function toggleHowItWorks() {
+  const content = document.getElementById("howItWorksContent");
+  const button = event.currentTarget;
+  const isOpen = !content.classList.contains("hidden");
+  button.innerHTML = isOpen ? "▶ How it works" : "▼ How it works";
+  content.classList.toggle("hidden");
+}
+
+function simulateUnban() {
+  const id = document.getElementById("userID").value.trim();
+  const result = document.getElementById("result");
+  const terminal = document.getElementById("terminalOutput");
+
+  if (!id || id !== id.toUpperCase()) {
+    result.innerText = "❌ Not valid App Code. Use uppercase only.";
+    result.className = "text-red-500 mt-4";
+    return;
+  }
+
+  if (id.length > 5) {
+    result.innerText = "❌ Invalid Code. Max length is 5 characters.";
+    result.className = "text-red-500 mt-4";
+    return;
+  }
+
+  const savedResults = JSON.parse(localStorage.getItem("unbanResults") || "{}");
+  const prevResult = savedResults[id];
+
+  function logLine(text, delay = 1000) {
+    const line = document.createElement("div");
+    line.classList.add("typing-line");
+    line.textContent = text;
+    terminal.appendChild(line);
+    terminal.scrollTop = terminal.scrollHeight;
+    const typeSound = document.getElementById("typeSound");
+    if (typeSound) typeSound.play();
+    return new Promise(resolve => setTimeout(resolve, delay));
+  }
+
+  async function printLog(lines) {
+    terminal.innerHTML = "";
+    for (let line of lines) {
+      await logLine(line, 3000);
+    }
+  }
+
+  const isSuccess = prevResult ? (prevResult === "success") : Math.random() < 0.7;
+  savedResults[id] = isSuccess ? "success" : "fail";
+  localStorage.setItem("unbanResults", JSON.stringify(savedResults));
+
+  printLog([
+    "> Connecting to Quest...",
+    "> Verifying app code...",
+    "> Checking file access permissions...",
+    "> Preparing unban environment...",
+    "> Transmitting override signals...",
+    "> Awaiting confirmation..."
+  ]).then(async () => {
+    let seconds = 65;
+const countdown = document.getElementById("countdown");
+countdown.innerText = `⏳ Time left till done: ${seconds}s`;
+const interval = setInterval(() => {
+  seconds--;
+  countdown.innerText = `⏳ Time left till done: ${seconds}s`;
+  if (seconds <= 0) clearInterval(interval);
+}, 1000);
+await new Promise(r => setTimeout(r, 65000));
+countdown.innerText = "✅ Done!";
+    const finalLine = document.createElement("div");
+    finalLine.classList.add("typing-line");
+    finalLine.textContent = isSuccess ? "> Unban successful!" : "> Code rejected";
+    terminal.appendChild(finalLine);
+    terminal.scrollTop = terminal.scrollHeight;
+    const sound = document.getElementById(isSuccess ? "successSound" : "failSound");
+    if (sound) sound.play();
+    result.innerText = isSuccess ? "✅ Unban Successful!" : "❌ Code Flagged";
+    result.className = isSuccess ? "text-green-400 mt-4" : "text-red-400 mt-4";
+  });
+}
+
+function exportLogs() {
+  const logs = document.getElementById("terminalOutput").innerText;
+  const blob = new Blob([logs], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "unban_logs.txt";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+</script>
+
+</body>
+</html>
